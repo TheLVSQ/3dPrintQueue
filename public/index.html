@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>3D Print Queue</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Queue</p>
+          <h1>3D Print Jobs</h1>
+          <p class="subhead">Designed for touch — perfect for your shop display.</p>
+        </div>
+        <div class="header-actions">
+          <button id="refresh-btn" class="ghost">Refresh</button>
+        </div>
+      </header>
+
+      <section class="status-filter" aria-label="Filter queue by status">
+        <button data-filter="all" class="chip is-active">All</button>
+        <button data-filter="pending" class="chip">Pending</button>
+        <button data-filter="completed" class="chip">Completed</button>
+        <button data-filter="archived" class="chip">Archived</button>
+      </section>
+
+      <main class="main-grid">
+        <section class="panel" aria-labelledby="queue-heading">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Orders</p>
+              <h2 id="queue-heading">Queue</h2>
+            </div>
+            <div class="panel-actions">
+              <label class="toggle">
+                <input type="checkbox" id="auto-refresh" />
+                <span>Auto refresh</span>
+              </label>
+            </div>
+          </div>
+          <div id="queue" class="order-grid" aria-live="polite"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="form-heading">
+          <div>
+            <p class="eyebrow">Quick add</p>
+            <h2 id="form-heading">Add Order</h2>
+          </div>
+          <form id="order-form" autocomplete="off">
+            <div class="field">
+              <label for="orderNumber">Order #</label>
+              <input id="orderNumber" name="orderNumber" required inputmode="numeric" />
+            </div>
+            <div class="field">
+              <label for="itemName">Item</label>
+              <input id="itemName" name="itemName" required />
+            </div>
+            <div class="field">
+              <label for="filamentType">Filament type</label>
+              <input id="filamentType" name="filamentType" required />
+            </div>
+            <div class="field">
+              <label for="filamentColor">Filament color</label>
+              <input id="filamentColor" name="filamentColor" required />
+            </div>
+            <div class="field">
+              <label for="quantity">Quantity</label>
+              <input id="quantity" name="quantity" type="number" min="1" value="1" required />
+            </div>
+            <div class="field">
+              <label for="shipBy">Ship by</label>
+              <input id="shipBy" name="shipBy" type="date" />
+            </div>
+            <div class="field">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes" rows="3"></textarea>
+            </div>
+            <button class="primary" type="submit">Add to queue</button>
+            <p class="helper">Automations can POST to <code>/api/orders</code> to sync Etsy or n8n.</p>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <template id="order-card-template">
+      <article class="order-card">
+        <div class="order-main">
+          <p class="order-number"></p>
+          <h3 class="order-item"></h3>
+          <p class="order-filament"></p>
+          <p class="order-ship"></p>
+          <p class="order-notes"></p>
+        </div>
+        <div class="order-meta">
+          <span class="pill quantity"></span>
+          <button class="complete-btn" aria-label="Toggle status">Done</button>
+          <button class="delete-btn ghost" aria-label="Delete order">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

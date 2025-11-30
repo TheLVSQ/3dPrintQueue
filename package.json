@@ -1,0 +1,17 @@
+{
+  "name": "3d-print-queue",
+  "version": "1.0.0",
+  "description": "Touch-friendly queue manager for 3D printer orders",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

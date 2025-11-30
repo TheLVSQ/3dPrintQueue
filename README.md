@@ -47,6 +47,13 @@ Orders persist to `data/orders.db`. The file is created on first write and ignor
 - Delete `data/orders.db` to reset the queue, or open it with any SQLite browser for manual edits/backups.
 - If you previously had `data/orders.json`, the server will migrate it once at startup and rename the original file to `orders.json.bak`.
 
+## Configuration
+
+| Env var | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `4000` | HTTP port for the Express server. |
+| `ENABLE_TLS` | `false` | When `true`, Helmet includes the `upgrade-insecure-requests` CSP directive for HTTPS deployments. Leave `false` (default) for HTTP-only LAN or kiosk installs so CSS/JS still load over plain HTTP. |
+
 ## API quick reference
 
 All endpoints return JSON.
@@ -91,6 +98,8 @@ docker compose down
 ```
 
 Why mount `data/`? It keeps the SQLite database intact between container restarts. Remove `data/orders.db` if you want to reset.
+
+If your reverse proxy terminates HTTPS before forwarding traffic to the container, set `ENABLE_TLS=true` (env var) so Helmet enforces `upgrade-insecure-requests`.
 
 ### Raspberry Pi tips
 

@@ -11,6 +11,12 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const ENABLE_TLS = String(process.env.ENABLE_TLS || '').toLowerCase() === 'true';
+
+const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+if (!ENABLE_TLS) {
+  delete cspDirectives['upgrade-insecure-requests'];
+}
 
 const toIsoOrNull = (value) => {
   if (!value) return null;
@@ -18,7 +24,13 @@ const toIsoOrNull = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: cspDirectives,
+    },
+  }),
+);
 app.use(express.json({ limit: '512kb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

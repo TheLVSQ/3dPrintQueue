@@ -5,7 +5,7 @@ Touch-friendly dashboard + REST API for tracking additive manufacturing jobs fro
 ## Highlights
 
 - Express API with CRUD endpoints for order management.
-- Local JSON storage (`data/orders.json`) by default, but easy to swap to a database.
+- File-backed SQLite database (`data/orders.db`) for zero-config persistence.
 - Responsive UI bundled in `public/` with large tap targets and quick status filters.
 - Ships with Docker + Compose definitions for Pi, NUC, or any container host.
 
@@ -15,7 +15,7 @@ Touch-friendly dashboard + REST API for tracking additive manufacturing jobs fro
 | --- | --- |
 | `src/server.js` | Express server, API handlers, and static asset hosting. |
 | `public/` | Front-end assets (HTML/CSS/JS). |
-| `data/orders.json` | Flat-file persistence; initialized empty for privacy. |
+| `data/` | Stores the generated `orders.db` SQLite database (gitignored). |
 | `Dockerfile`, `docker-compose.yml` | Container build/run definitions. |
 
 ## Prerequisites
@@ -23,6 +23,7 @@ Touch-friendly dashboard + REST API for tracking additive manufacturing jobs fro
 - Node.js 18+
 - npm
 - (Optional) Docker / Docker Compose
+- Native build tools (python3, make, g++) may be required the first time `better-sqlite3` compiles on your host OS. The provided Dockerfile installs them automatically.
 
 ## Local development
 
@@ -37,7 +38,14 @@ Production-style run:
 npm start           # serves on http://localhost:4000
 ```
 
-Orders persist to `data/orders.json`. The file is git-tracked only with placeholder content; replace with your own sample data if needed.
+Orders persist to `data/orders.db`. The file is created on first write and ignored by git so you can keep production data out of version control.
+
+## Database notes
+
+- Uses SQLite with a single `orders` table (columns: id, orderNumber, itemName, filamentType, filamentColor, quantity, shipBy, notes, status, createdAt, updatedAt).
+- Records are ordered by `shipBy` date (NULLs last) and then creation time.
+- Delete `data/orders.db` to reset the queue, or open it with any SQLite browser for manual edits/backups.
+- If you previously had `data/orders.json`, the server will migrate it once at startup and rename the original file to `orders.json.bak`.
 
 ## API quick reference
 
@@ -82,7 +90,7 @@ docker compose up -d
 docker compose down
 ```
 
-Why mount `data/`? It keeps the queue intact between container restarts. Remove `data/orders.json` if you want to reset.
+Why mount `data/`? It keeps the SQLite database intact between container restarts. Remove `data/orders.db` if you want to reset.
 
 ### Raspberry Pi tips
 

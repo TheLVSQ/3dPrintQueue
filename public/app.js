@@ -5,7 +5,7 @@ const refreshBtn = document.getElementById('refresh-btn');
 const autoRefreshToggle = document.getElementById('auto-refresh');
 const template = document.getElementById('order-card-template');
 
-let currentFilter = 'all';
+let currentFilter = 'pending';
 let autoRefreshTimer = null;
 
 const formatShipDate = (iso) => {
@@ -61,10 +61,14 @@ const updateQueue = async () => {
       node.querySelector('.quantity').textContent = `${order.quantity} pcs`;
 
       const completeBtn = node.querySelector('.complete-btn');
+      const archiveBtn = node.querySelector('.archive-btn');
       const deleteBtn = node.querySelector('.delete-btn');
       completeBtn.textContent = order.status === 'completed' ? 'Mark pending' : 'Mark done';
       completeBtn.dataset.id = order.id;
       completeBtn.dataset.status = order.status === 'completed' ? 'pending' : 'completed';
+      archiveBtn.textContent = order.status === 'archived' ? 'Unarchive' : 'Archive';
+      archiveBtn.dataset.id = order.id;
+      archiveBtn.dataset.status = order.status === 'archived' ? 'pending' : 'archived';
       deleteBtn.dataset.id = order.id;
 
       queueEl.appendChild(node);
@@ -135,6 +139,13 @@ queueEl.addEventListener('click', async (event) => {
   const button = event.target.closest('button');
   if (!button) return;
   if (button.classList.contains('complete-btn')) {
+    try {
+      await updateStatus(button.dataset.id, button.dataset.status);
+      await updateQueue();
+    } catch (err) {
+      alert(err.message);
+    }
+  } else if (button.classList.contains('archive-btn')) {
     try {
       await updateStatus(button.dataset.id, button.dataset.status);
       await updateQueue();

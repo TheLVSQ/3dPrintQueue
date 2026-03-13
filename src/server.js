@@ -7,6 +7,7 @@ const {
   createOrder,
   updateOrderStatus,
   deleteOrder,
+  countOrders,
 } = require('./db');
 
 const app = express();
@@ -50,6 +51,14 @@ const sanitizeOrder = (order) => ({
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+app.get('/api/orders/counts', (req, res, next) => {
+  try {
+    res.json(countOrders());
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/api/orders', (req, res, next) => {
@@ -109,7 +118,7 @@ app.post('/api/orders', (req, res, next) => {
 app.patch('/api/orders/:id/status', (req, res, next) => {
   try {
     const { status } = req.body || {};
-    const allowed = ['pending', 'completed', 'archived'];
+    const allowed = ['pending', 'completed', 'archived', 'cancelled'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
     }

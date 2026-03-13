@@ -4,9 +4,17 @@ const chips = document.querySelectorAll('.status-filter .chip');
 const refreshBtn = document.getElementById('refresh-btn');
 const autoRefreshToggle = document.getElementById('auto-refresh');
 const template = document.getElementById('order-card-template');
+const toggleFormBtn = document.getElementById('toggle-form');
+const formBody = document.getElementById('order-form-body');
 
 let currentFilter = 'pending';
 let autoRefreshTimer = null;
+
+toggleFormBtn.addEventListener('click', () => {
+  const collapsed = formBody.classList.toggle('collapsed');
+  toggleFormBtn.textContent = collapsed ? '+ Add' : '− Hide';
+  toggleFormBtn.setAttribute('aria-expanded', String(!collapsed));
+});
 
 const formatShipDate = (iso) => {
   if (!iso) {
@@ -40,10 +48,26 @@ const fetchOrders = async () => {
   return res.json();
 };
 
+const fetchCounts = async () => {
+  const res = await fetch('/api/orders/counts');
+  if (!res.ok) return null;
+  return res.json();
+};
+
+const updateChipCounts = (counts) => {
+  if (!counts) return;
+  for (const [key, val] of Object.entries(counts)) {
+    const el = document.getElementById(`count-${key}`);
+    if (el) el.textContent = val > 0 ? val : '';
+  }
+};
+
 const updateQueue = async () => {
   queueEl.dataset.loading = 'true';
   try {
-    const orders = await fetchOrders();
+    const [orders, counts] = await Promise.all([fetchOrders(), fetchCounts()]);
+    updateChipCounts(counts);
+
     if (!orders.length) {
       renderEmpty();
       return;
@@ -61,14 +85,43 @@ const updateQueue = async () => {
       node.querySelector('.quantity').textContent = `${order.quantity} pcs`;
 
       const completeBtn = node.querySelector('.complete-btn');
+      const cancelBtn = node.querySelector('.cancel-btn');
       const archiveBtn = node.querySelector('.archive-btn');
       const deleteBtn = node.querySelector('.delete-btn');
-      completeBtn.textContent = order.status === 'completed' ? 'Mark pending' : 'Mark done';
+
+      // Complete button
+      if (order.status === 'cancelled' || order.status === 'archived') {
+        completeBtn.textContent = 'Restore';
+        completeBtn.dataset.status = 'pending';
+      } else if (order.status === 'completed') {
+        completeBtn.textContent = 'Mark pending';
+        completeBtn.dataset.status = 'pending';
+      } else {
+        completeBtn.textContent = 'Mark done';
+        completeBtn.dataset.status = 'completed';
+      }
       completeBtn.dataset.id = order.id;
-      completeBtn.dataset.status = order.status === 'completed' ? 'pending' : 'completed';
-      archiveBtn.textContent = order.status === 'archived' ? 'Unarchive' : 'Archive';
+
+      // Cancel button
+      if (order.status === 'cancelled') {
+        cancelBtn.textContent = 'Restore';
+        cancelBtn.dataset.status = 'pending';
+      } else {
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.dataset.status = 'cancelled';
+      }
+      cancelBtn.dataset.id = order.id;
+
+      // Archive button
+      if (order.status === 'archived') {
+        archiveBtn.textContent = 'Unarchive';
+        archiveBtn.dataset.status = 'pending';
+      } else {
+        archiveBtn.textContent = 'Archive';
+        archiveBtn.dataset.status = 'archived';
+      }
       archiveBtn.dataset.id = order.id;
-      archiveBtn.dataset.status = order.status === 'archived' ? 'pending' : 'archived';
+
       deleteBtn.dataset.id = order.id;
 
       queueEl.appendChild(node);
@@ -138,14 +191,8 @@ form.addEventListener('submit', async (event) => {
 queueEl.addEventListener('click', async (event) => {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.classList.contains('complete-btn')) {
-    try {
-      await updateStatus(button.dataset.id, button.dataset.status);
-      await updateQueue();
-    } catch (err) {
-      alert(err.message);
-    }
-  } else if (button.classList.contains('archive-btn')) {
+
+  if (button.classList.contains('complete-btn') || button.classList.contains('cancel-btn') || button.classList.contains('archive-btn')) {
     try {
       await updateStatus(button.dataset.id, button.dataset.status);
       await updateQueue();
@@ -153,7 +200,19 @@ queueEl.addEventListener('click', async (event) => {
       alert(err.message);
     }
   } else if (button.classList.contains('delete-btn')) {
-    if (!confirm('Remove this order?')) return;
+    if (!button.dataset.confirming) {
+      button.dataset.confirming = 'true';
+      button.textContent = 'Sure?';
+      button.classList.add('is-confirming');
+      clearTimeout(button._resetTimer);
+      button._resetTimer = setTimeout(() => {
+        delete button.dataset.confirming;
+        button.textContent = 'Delete';
+        button.classList.remove('is-confirming');
+      }, 3000);
+      return;
+    }
+    clearTimeout(button._resetTimer);
     try {
       await deleteOrder(button.dataset.id);
       await updateQueue();
@@ -179,10 +238,12 @@ refreshBtn.addEventListener('click', () => {
 autoRefreshToggle.addEventListener('change', () => {
   clearInterval(autoRefreshTimer);
   if (autoRefreshToggle.checked) {
-    autoRefreshTimer = setInterval(updateQueue, 60_000);
+    autoRefreshTimer = setInterval(updateQueue, 30_000);
   }
 });
 
+// Start auto-refresh on by default at 30s
+autoRefreshToggle.checked = true;
+autoRefreshTimer = setInterval(updateQueue, 30_000);
+
 updateQueue();
-
-

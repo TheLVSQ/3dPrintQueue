@@ -93,6 +93,9 @@ const deleteStmt = db.prepare(`
   DELETE FROM orders
   WHERE id = ?
 `);
+const countByStatusStmt = db.prepare(
+  'SELECT status, COUNT(*) as cnt FROM orders GROUP BY status',
+);
 
 const migrateLegacyJson = () => {
   if (!fs.existsSync(LEGACY_JSON)) {
@@ -177,10 +180,21 @@ const deleteOrder = (id) => {
   return existing;
 };
 
+const countOrders = () => {
+  const rows = countByStatusStmt.all();
+  const result = { all: 0, pending: 0, completed: 0, archived: 0, cancelled: 0 };
+  rows.forEach((r) => {
+    result[r.status] = r.cnt;
+    result.all += r.cnt;
+  });
+  return result;
+};
+
 module.exports = {
   listOrders,
   getOrderById,
   createOrder,
   updateOrderStatus,
   deleteOrder,
+  countOrders,
 };
